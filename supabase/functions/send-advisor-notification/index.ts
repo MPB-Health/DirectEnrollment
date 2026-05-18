@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
           <tr>
             <td style="background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%); padding: 32px 40px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">New Enrollment Notification</h1>
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">New Direct Enrollment Notification</h1>
             </td>
           </tr>
           <tr>
