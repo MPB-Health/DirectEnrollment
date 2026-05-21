@@ -528,7 +528,7 @@ export default function DependentsAddressSection({
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
                       errors[`dependent_${selectedDependentIndex}_email`] ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder=""
+                    placeholder={contactOptional ? 'Optional' : ''}
                     aria-required={!contactOptional}
                     aria-invalid={!!errors[`dependent_${selectedDependentIndex}_email`]}
                   />
@@ -552,7 +552,7 @@ export default function DependentsAddressSection({
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
                         errors[`dependent_${selectedDependentIndex}_phone`] ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      placeholder="555-123-4567"
+                      placeholder={contactOptional ? 'Optional' : '555-123-4567'}
                       maxLength={12}
                       aria-required={!contactOptional}
                       aria-invalid={!!errors[`dependent_${selectedDependentIndex}_phone`]}
@@ -579,7 +579,7 @@ export default function DependentsAddressSection({
                         className={`w-full px-4 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
                           errors[`dependent_${selectedDependentIndex}_ssn`] ? 'border-red-500' : 'border-gray-300'
                         }`}
-                        placeholder="XXX-XX-XXXX"
+                        placeholder={contactOptional ? 'Optional' : 'XXX-XX-XXXX'}
                         maxLength={11}
                         aria-required={!contactOptional}
                         aria-invalid={!!errors[`dependent_${selectedDependentIndex}_ssn`]}
