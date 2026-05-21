@@ -575,7 +575,7 @@ export default function Step2Questionnaire({
               Has the primary member experienced symptoms of, been diagnosed with, or been treated for any condition within the past 24 months?
             </p>
             <p className="text-sm text-gray-600 mb-3">
-              *Note: A $25.00 annual fee is charged at the time of enrollment and each year thereafter. This fee covers your membership in the Mpowering Benefits Association, Inc.
+              *Note: A $25.00 annual fee is charged at the time of enrollment and each year thereafter. This fee covers your membership in the MPowering Benefits Association, Inc.
             </p>
             <p className="text-sm mb-2" style={{ color: '#9b0000' }}>
              Add the conditions below. For multiple conditions, separate each one on a new line. (If no conditions exist, enter NA)
