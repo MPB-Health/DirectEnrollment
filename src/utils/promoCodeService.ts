@@ -56,14 +56,14 @@ export async function validatePromoCode(
   if (!code || code.trim() === '') {
     return {
       success: false,
-      error: 'Please enter a promo code',
+      error: 'Please enter an enrollment code',
     };
   }
 
   if (!supabase) {
     return {
       success: false,
-      error: 'Promo validation is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.',
+      error: 'Enrollment code validation is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.',
     };
   }
 
@@ -86,7 +86,7 @@ export async function validatePromoCode(
       console.error('Error validating promo code:', error);
       return {
         success: false,
-        error: 'Error validating promo code. Please try again.',
+        error: 'Error validating enrollment code. Please try again.',
       };
     }
 
@@ -104,12 +104,12 @@ export async function validatePromoCode(
       if ((rows?.length ?? 0) > 0) {
         return {
           success: false,
-          error: 'This promo code is not valid for this enrollment product.',
+          error: 'This enrollment code is not valid for this enrollment product.',
         };
       }
       return {
         success: false,
-        error: 'Invalid promo code',
+        error: 'Invalid enrollment code',
       };
     }
 
