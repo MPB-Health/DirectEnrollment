@@ -6,6 +6,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import DependentsAddressSection from './DependentsAddressSection';
 import PreExistingConditionsSection from './PreExistingConditionsSection';
 import PaymentInformationSection from './PaymentInformationSection';
+import BulletinNotice from './BulletinNotice';
 import { applyPromoDiscount } from '../utils/promoCodeService';
 import {
   getPrimarySubscriberPhoneDuplicateError,
@@ -118,6 +119,8 @@ export default function Step2AddressInfo({
 
   return (
     <div className="space-y-8">
+      {formData.state === 'MA' && <BulletinNotice />}
+
       <div className="space-y-6">
         <div className="flex items-center gap-2 mb-4">
           <MapPin className="w-5 h-5 text-blue-600" />
