@@ -313,6 +313,10 @@ export async function generateEnrollmentPDF(formData: FormData): Promise<Blob> {
       ['Routing Number:', maskRoutingNumber(formData.payment.achrouting)],
       ['Account Number:', maskAccountNumber(formData.payment.achaccount)]
     );
+  } else if (formData.payment.paymentMethod === 'list-bill') {
+    paymentInfo.push(
+      ['Payment Method:', 'List Bill']
+    );
   }
 
   autoTable(doc, {

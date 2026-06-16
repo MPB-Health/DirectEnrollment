@@ -11,6 +11,10 @@ function App() {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('id') || '768413';
   });
+  const [employeeGroup, setEmployeeGroup] = useState<string | null>(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('employeegroup');
+  });
   useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {
       if (event.persisted) {
@@ -34,6 +38,8 @@ function App() {
       if (newAgentId !== agentId) {
         setAgentId(newAgentId);
       }
+
+      setEmployeeGroup(urlParams.get('employeegroup'));
     };
 
     checkUrlParams();
@@ -80,6 +86,7 @@ function App() {
           benefitId={benefitId}
           onBenefitIdChange={handleBenefitIdChange}
           agentId={agentId}
+          employeeGroup={employeeGroup}
         />
       </div>
       <footer className="bg-white border-t border-gray-200 py-6 px-4">

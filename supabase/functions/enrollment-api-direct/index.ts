@@ -654,9 +654,12 @@ Deno.serve(async (req: Request) => {
     }
 
     const isACH = requestData.payment.paymentType === 'ACH';
+    const isListBill = requestData.payment.paymentType === 'LB';
     let sanitizedCardNumber = '';
 
-    if (isACH) {
+    if (isListBill) {
+      // List Bill requires no card or bank details.
+    } else if (isACH) {
       if (!requestData.payment.achrouting || !requestData.payment.achaccount || !requestData.payment.achbank) {
         return new Response(
           JSON.stringify({ success: false, status: 400, error: "Incomplete ACH payment information" }),
@@ -873,6 +876,12 @@ Deno.serve(async (req: Request) => {
         ACHBANK: requestData.payment.achbank,
         FIRSTNAME: requestData.firstName,
         LASTNAME: requestData.lastName,
+      } : isListBill ? {
+        PAYMENTTYPE: "LB",
+        CCEXPYEAR: "",
+        CCTYPE: "",
+        CCNUMBER: "",
+        CCEXPMONTH: "",
       } : {
         CCEXPYEAR: requestData.payment.ccExpYear,
         PAYMENTTYPE: "CC",

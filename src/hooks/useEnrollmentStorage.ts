@@ -41,7 +41,7 @@ export interface Product {
 }
 
 export interface PaymentInfo {
-  paymentMethod: 'credit-card' | 'ach';
+  paymentMethod: 'credit-card' | 'ach' | 'list-bill';
   ccType: string;
   ccNumber: string;
   ccExpMonth: string;
