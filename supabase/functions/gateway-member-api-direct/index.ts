@@ -1,12 +1,41 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
 import CryptoJS from "npm:crypto-js@4.2.0";
+import {
+  isValidSubmissionId,
+  loadSubmission,
+  markSubmissionGatewayFailure,
+  markSubmissionGatewaySuccess,
+} from "../_shared/enrollmentSubmissions.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, Cache-Control",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, Cache-Control, X-Submission-Id",
 };
+
+/** Detect downstream success from enrollment123, tolerating string/boolean SUCCESS. */
+function parseGatewaySuccess(responseData: unknown, httpOk: boolean): boolean {
+  let bodySuccess = httpOk;
+  if (httpOk && responseData && typeof responseData === "object") {
+    const root = responseData as Record<string, unknown>;
+    const tx = root.TRANSACTION as Record<string, unknown> | undefined;
+    const txVal = (tx?.SUCCESS ?? root.SUCCESS) as unknown;
+    if (typeof txVal !== "undefined") {
+      const isTrue =
+        txVal === true ||
+        txVal === "true" ||
+        (typeof txVal === "string" && txVal.toLowerCase() === "true");
+      const isFalse =
+        txVal === false ||
+        txVal === "false" ||
+        (typeof txVal === "string" && txVal.toLowerCase() === "false");
+      if (isFalse) bodySuccess = false;
+      else if (isTrue) bodySuccess = true;
+    }
+  }
+  return bodySuccess;
+}
 
 function decryptPassword(encryptedPassword: string): string {
   try {
@@ -29,6 +58,7 @@ interface GatewayRequest {
   memberId?: string;
   pdfUrl?: string;
   customerEmail?: string;
+  submissionId?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -142,6 +172,22 @@ Deno.serve(async (req: Request) => {
     const trimmedMemberId = (requestData.memberId ?? '').toString().trim();
     const hasPdfUrl = !!(requestData.pdfUrl && requestData.pdfUrl.trim().length > 0);
 
+    const submissionId = isValidSubmissionId(requestData.submissionId)
+      ? requestData.submissionId!.trim()
+      : null;
+
+    // If this submission's PDF was already attached/completed, replay success
+    // instead of attaching the document a second time.
+    if (submissionId) {
+      const existing = await loadSubmission(supabase, submissionId);
+      if (existing && ['pdf_attached', 'completed'].includes(existing.status)) {
+        return new Response(
+          JSON.stringify({ success: true, status: 200, data: { idempotentReplay: true } }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
     const formData = new URLSearchParams();
     formData.append("CORP_ID", "1402");
     formData.append("API_USERNAME", username);
@@ -178,19 +224,38 @@ Deno.serve(async (req: Request) => {
       responseData = responseText;
     }
 
+    const bodySuccess = parseGatewaySuccess(responseData, response.ok);
+
     /**
      * PDFs are retained in `enrollment-documents` storage as a permanent record
      * of the enrollment; do not delete after the gateway call succeeds.
      */
 
+    // Update submission status so the background retry cron can finish (or
+    // skip) this row. A confirmed attach completes it; a failure increments the
+    // attempt counter for a later retry.
+    if (submissionId) {
+      if (bodySuccess) {
+        await markSubmissionGatewaySuccess(supabase, submissionId);
+      } else {
+        const row = await loadSubmission(supabase, submissionId);
+        await markSubmissionGatewayFailure(
+          supabase,
+          submissionId,
+          typeof responseData === "string" ? responseData : JSON.stringify(responseData),
+          row?.gateway_attempts ?? 0,
+        );
+      }
+    }
+
     return new Response(
       JSON.stringify({
-        success: response.ok,
+        success: bodySuccess,
         status: response.status,
         data: responseData,
       }),
       {
-        status: response.ok ? 200 : response.status,
+        status: bodySuccess ? 200 : response.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );

@@ -18,6 +18,11 @@ import {
 import { isChildDependentUnder18ForContactOptional } from '../utils/dependentAgeValidation';
 import { encryptSensitiveFields } from '../utils/payloadEncryption';
 import {
+  getOrCreateSubmissionId,
+  clearSubmissionId,
+  fetchSubmissionStatus,
+} from '../utils/enrollmentSubmission';
+import {
   isPremiumCareUnavailableState,
   PREMIUM_CARE_UNAVAILABLE_STATE_MESSAGE,
 } from '../constants/prohibitedEnrollmentStates';
@@ -55,6 +60,7 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<ApiResponse | null>(null);
   const [showThankYou, setShowThankYou] = useState(false);
+  const [finishingEnrollment, setFinishingEnrollment] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [memberId, setMemberId] = useState<string | null>(null);
   const [invalidDependentIndices, setInvalidDependentIndices] = useState<number[]>([]);
@@ -815,6 +821,12 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       const agentParam = formData.agent || agentId || '768413';
       const apiUrl = `${supabaseUrl}/functions/v1/enrollment-api-direct?id=${agentParam}`;
+      /**
+       * Reused across retries until the attempt completes. The edge function
+       * de-duplicates member creation per submissionId so a re-submit or lost
+       * response cannot create a second member, charge, or PDF.
+       */
+      const submissionId = getOrCreateSubmissionId();
 
       const directEnrollmentProduct = formData.products.find(p => p.id === 'care-plus');
       const benefitIdToSend = directEnrollmentProduct?.extractedBenefitId || formData.benefitId;
@@ -890,6 +902,7 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
               'Authorization': `Bearer ${supabaseKey}`,
               'Content-Type': 'application/json',
               'apikey': supabaseKey,
+              'X-Submission-Id': submissionId,
             },
             body: bodyString,
           });
@@ -962,6 +975,36 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
             break;
           }
 
+          if (res.status === 409) {
+            /**
+             * A parallel submit is already creating this member. Don't re-POST
+             * (it would 409 again); poll the submission status to recover the
+             * memberId and resume the PDF/gateway phase.
+             */
+            const statusResult = await fetchSubmissionStatus(submissionId, agentParam);
+            if (statusResult?.memberId) {
+              enrollmentSuccess = true;
+              extractedMemberId = statusResult.memberId;
+              setMemberId(extractedMemberId);
+              break;
+            }
+
+            if (attempt < maxRetries - 1) {
+              attempt++;
+              const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+            }
+
+            enrollmentResponseData = {
+              success: false,
+              status: 409,
+              error: 'Enrollment already in progress',
+              message: 'This enrollment is already being processed. Please wait a moment and check your email before trying again.',
+            };
+            break;
+          }
+
           if (res.status >= 500 && attempt < maxRetries - 1) {
             attempt++;
             const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
@@ -995,11 +1038,16 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
       }
 
       if (enrollmentSuccess) {
+        setFinishingEnrollment(true);
         try {
-          await generateAndUploadPDF(extractedMemberId);
+          await generateAndUploadPDF(extractedMemberId, submissionId);
         } catch {
         }
 
+        // The attempt is done (PDF/gateway errors are swallowed and finished by
+        // the background retry cron); release the idempotency key.
+        clearSubmissionId();
+        setFinishingEnrollment(false);
         setShowThankYou(true);
         clearStorage();
         sendAdvisorNotification(agentParam).catch(() => {});
@@ -1043,7 +1091,7 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
     }
   };
 
-  const sendPdfToGateway = async (memberId: string | null, pdfUrl: string) => {
+  const sendPdfToGateway = async (memberId: string | null, pdfUrl: string, submissionId?: string) => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -1064,6 +1112,7 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
           memberId: memberId ?? '',
           pdfUrl,
           customerEmail: formData.email,
+          ...(submissionId ? { submissionId } : {}),
         }),
       });
 
@@ -1084,7 +1133,7 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
     }
   };
 
-  const generateAndUploadPDF = async (enrollmentMemberId: string | null) => {
+  const generateAndUploadPDF = async (enrollmentMemberId: string | null, submissionId?: string) => {
     try {
       const pdfBlob = await generateEnrollmentPDF(formData);
 
@@ -1096,6 +1145,9 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
       const formDataUpload = new FormData();
       formDataUpload.append('pdf', pdfBlob, 'enrollment.pdf');
       formDataUpload.append('email', formData.email);
+      if (submissionId) {
+        formDataUpload.append('submissionId', submissionId);
+      }
       formDataUpload.append('metadata', JSON.stringify({
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -1130,7 +1182,7 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
          * succeeds. The member ID is best-effort: if extraction missed it,
          * enrollment123 attaches the doc to the agent's most recent enrollment.
          */
-        await sendPdfToGateway(enrollmentMemberId, pdfResult.pdfUrl);
+        await sendPdfToGateway(enrollmentMemberId, pdfResult.pdfUrl, submissionId);
       } else {
         throw new Error(pdfResult.error || 'PDF upload failed');
       }
@@ -1190,6 +1242,7 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
               onBack={handleBack}
               onSubmit={handleSubmit}
               loading={loading}
+              finishingEnrollment={finishingEnrollment}
               response={response}
               onUpdateDependent={handleUpdateDependent}
               onPaymentChange={handlePaymentChange}
