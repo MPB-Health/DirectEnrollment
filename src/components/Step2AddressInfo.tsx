@@ -120,6 +120,12 @@ export default function Step2AddressInfo({
   }, [response]);
 
   const isProhibitedState = isPremiumCareUnavailableState(formData.state);
+  const isFailureResponse = !!response &&
+    (response.success === false ||
+      response.data?.SUCCESS === "false" ||
+      response.data?.TRANSACTION?.SUCCESS === "false");
+  /** Slow/timed-out enrollment (202): member may be processing — do not resubmit. */
+  const isProcessingResponse = !!response && !isFailureResponse && response.status === 202;
 
   return (
     <div className="space-y-8">
@@ -513,11 +519,28 @@ export default function Step2AddressInfo({
         employeeGroup={employeeGroup}
       />
 
-      {response && (response.success === false || response.data?.SUCCESS === "false" || response.data?.TRANSACTION?.SUCCESS === "false") ? (
+      {isFailureResponse ? (
         <div className="pt-6 bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
           <p className="text-lg font-semibold text-blue-900">
             You need to call support. Thank you.
           </p>
+        </div>
+      ) : isProcessingResponse ? (
+        <div className="pt-6">
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-6">
+            <div className="flex items-start gap-3">
+              <Loader2 className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5 animate-spin" />
+              <div>
+                <h3 className="font-semibold text-lg mb-1 text-amber-900">
+                  Your enrollment is being processed
+                </h3>
+                <p className="text-amber-800">
+                  {response?.message ||
+                    'Your enrollment is taking longer than usual and is still being processed. Please do NOT resubmit — our team will confirm your enrollment shortly.'}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="pt-6 flex flex-col gap-4">
@@ -557,7 +580,7 @@ export default function Step2AddressInfo({
         </div>
       )}
 
-      {response && (response.success === false || response.data?.SUCCESS === "false" || response.data?.TRANSACTION?.SUCCESS === "false") && (
+      {isFailureResponse && (
         <div ref={errorMessageRef} className="p-6 rounded-lg border-2 bg-red-50 border-red-500">
           <div className="flex items-start gap-3">
             <XCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />

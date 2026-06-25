@@ -887,16 +887,33 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
         bodyString = JSON.stringify(requestBody);
       }
 
-      let enrollmentSuccess = false;
-      let extractedMemberId: string | null = null;
-      let enrollmentResponseData: ApiResponse | null = null;
+      /**
+       * Store the PDF in Supabase storage BEFORE enrolling so it is always
+       * saved — even if the enrollment POST later times out. The 1Administration
+       * API can be slow enough for the edge function to hit its ~150s wall-clock
+       * limit and return 504 while the member is still created upstream; gating
+       * PDF storage on that response would mean no PDF is ever saved. The
+       * agreement PDF is built from form data, so it needs neither the member id
+       * nor a submissionId. Omitting submissionId keeps the row out of the
+       * 'pdf_stored' state, so the shared retry cron never auto-attaches it.
+       */
+      setFinishingEnrollment(true);
+      try {
+        await generateAndUploadPDF(null);
+      } catch {
+        // PDF is best-effort; never block the enrollment on a storage failure.
+      }
+      setFinishingEnrollment(false);
 
       /**
-       * Fire exactly once — no client-side auto-retry. A single member-creation
-       * call cannot create duplicates; a slow/failed call surfaces an error and
-       * the user retries manually (the reused submissionId + the server-side
-       * idempotency gate protect any manual retry from double-enrolling).
+       * Fire the enrollment POST exactly once — no auto-retry. Retrying a slow
+       * or timed-out enrollment is what creates duplicate members. The
+       * client-side timeout mirrors the edge function's ~150s wall-clock limit.
        */
+      const ENROLL_TIMEOUT_MS = 150000;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), ENROLL_TIMEOUT_MS);
+
       try {
         const res = await fetch(apiUrl, {
           method: 'POST',
@@ -906,8 +923,11 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
             'apikey': supabaseKey,
             'X-Submission-Id': submissionId,
           },
+          cache: 'no-store',
           body: bodyString,
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
 
         const contentType = res.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
@@ -917,118 +937,118 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
 
         const data = await res.json();
 
-        if (res.ok || res.status === 400) {
-          const txVal = data.data?.TRANSACTION?.SUCCESS;
-          const topVal = data.data?.SUCCESS;
-
-          const txFailed =
-            txVal === false ||
-            txVal === "false" ||
-            (typeof txVal === 'string' && txVal.toLowerCase() === 'false');
-
-          const topLevelFailed =
-            topVal === false ||
-            topVal === "false" ||
-            (typeof topVal === 'string' && topVal.toLowerCase() === 'false');
-
-          const txConfirmed =
-            txVal === true ||
-            txVal === "true" ||
-            (typeof txVal === 'string' && txVal.toLowerCase() === 'true');
-
-          const topConfirmed =
-            data.success === true &&
-            (topVal === "true" ||
-              (typeof topVal === 'string' && topVal.toLowerCase() === 'true'));
-
-          if (txFailed || topLevelFailed) {
-            enrollmentResponseData = data;
-          } else if (!txConfirmed && !topConfirmed) {
-            enrollmentResponseData = {
-              success: false,
-              status: data.status || res.status,
-              data: data.data,
-              error: 'Enrollment could not be confirmed',
-              message: 'The enrollment response was ambiguous. Please contact support.',
-            };
-          } else {
-            enrollmentSuccess = true;
-            /**
-             * 1administration responses wrap the new member under either
-             * `data.MEMBER` or `data.TRANSACTION.MEMBER`; try both, plus the
-             * occasional flat `MEMBERID`/`ID` key, before giving up.
-             */
-            const memberCandidates = [
-              data.data?.MEMBER?.ID,
-              data.data?.TRANSACTION?.MEMBER?.ID,
-              data.data?.TRANSACTION?.MEMBERID,
-              data.data?.MEMBERID,
-              data.data?.ID,
-            ];
-            extractedMemberId = memberCandidates
-              .map(v => (v != null ? String(v).trim() : ''))
-              .find(v => v.length > 0) || null;
-            setMemberId(extractedMemberId);
-          }
-        } else if (res.status === 409) {
+        if (res.status === 409) {
           /**
            * The server's idempotency gate already has this submission in flight
            * (a prior click is still creating the member). Don't re-POST; recover
            * the memberId from the submission record if it's already enrolled,
-           * otherwise show an error and let the user retry manually.
+           * otherwise tell the user to wait rather than resubmit.
            */
           const statusResult = await fetchSubmissionStatus(submissionId, agentParam);
           if (statusResult?.memberId) {
-            enrollmentSuccess = true;
-            extractedMemberId = statusResult.memberId;
-            setMemberId(extractedMemberId);
-          } else {
-            enrollmentResponseData = {
-              success: false,
-              status: 409,
-              error: 'Enrollment already in progress',
-              message: 'This enrollment is already being processed. Please wait a moment and check your email before trying again.',
-            };
+            setMemberId(statusResult.memberId);
+            clearSubmissionId();
+            setShowThankYou(true);
+            clearStorage();
+            sendAdvisorNotification(agentParam).catch(() => {});
+            setLoading(false);
+            return;
           }
-        } else {
-          enrollmentResponseData = data;
-        }
-      } catch (error) {
-        const errMsg = error instanceof Error ? error.message : 'Unknown error';
-        const isTimeout = errMsg.includes('abort') || errMsg.includes('timeout');
-        enrollmentResponseData = {
-          success: false,
-          status: isTimeout ? 504 : 500,
-          error: isTimeout ? 'Request timed out' : 'Network error',
-          message: isTimeout
-            ? 'The enrollment server took too long to respond. Please try again.'
-            : `Failed to connect to enrollment API: ${errMsg}`,
-        };
-      }
-
-      if (enrollmentSuccess) {
-        setFinishingEnrollment(true);
-        try {
-          // Generate + upload the PDF to Supabase storage so it can be
-          // downloaded for the manual 1Administration upload. We intentionally
-          // do NOT pass submissionId here: that keeps the submission out of the
-          // 'pdf_stored' state so the shared retry cron never auto-attaches it.
-          await generateAndUploadPDF(extractedMemberId);
-        } catch {
+          setResponse({
+            success: false,
+            status: 409,
+            error: 'Enrollment already in progress',
+            message: 'This enrollment is already being processed. Please wait a moment and check your email before trying again.',
+          });
+          clearFormDataOnly();
+          setLoading(false);
+          return;
         }
 
-        // The attempt is complete; release the idempotency key.
+        const txVal = data.data?.TRANSACTION?.SUCCESS;
+        const topVal = data.data?.SUCCESS;
+
+        const txFailed =
+          txVal === false ||
+          txVal === "false" ||
+          (typeof txVal === 'string' && txVal.toLowerCase() === 'false');
+
+        const topLevelFailed =
+          topVal === false ||
+          topVal === "false" ||
+          (typeof topVal === 'string' && topVal.toLowerCase() === 'false');
+
+        const txConfirmed =
+          txVal === true ||
+          txVal === "true" ||
+          (typeof txVal === 'string' && txVal.toLowerCase() === 'true');
+
+        const topConfirmed =
+          data.success === true &&
+          (topVal === "true" ||
+            (typeof topVal === 'string' && topVal.toLowerCase() === 'true'));
+
+        const isHandledStatus = res.ok || res.status === 400;
+
+        if (!isHandledStatus || txFailed || topLevelFailed) {
+          // Clear failure (declined card, hard validation error, 5xx, etc.).
+          setResponse(data);
+          clearFormDataOnly();
+          setLoading(false);
+          return;
+        }
+
+        if (!txConfirmed && !topConfirmed) {
+          setResponse({
+            success: false,
+            status: data.status || res.status,
+            data: data.data,
+            error: 'Enrollment could not be confirmed',
+            message: 'The enrollment response was ambiguous. Please contact support.',
+          });
+          clearFormDataOnly();
+          setLoading(false);
+          return;
+        }
+
+        // Success — the PDF was already stored above.
+        const memberCandidates = [
+          data.data?.MEMBER?.ID,
+          data.data?.TRANSACTION?.MEMBER?.ID,
+          data.data?.TRANSACTION?.MEMBERID,
+          data.data?.MEMBERID,
+          data.data?.ID,
+        ];
+        const enrolledMemberId = memberCandidates
+          .map(v => (v != null ? String(v).trim() : ''))
+          .find(v => v.length > 0) || null;
+        setMemberId(enrolledMemberId);
         clearSubmissionId();
-        setFinishingEnrollment(false);
         setShowThankYou(true);
         clearStorage();
         sendAdvisorNotification(agentParam).catch(() => {});
-      } else {
-        setResponse(enrollmentResponseData);
+        setLoading(false);
+        return;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        /**
+         * Timeout / network error: the member may have been created upstream and
+         * the PDF is already stored. Do NOT retry (that is what causes duplicate
+         * members); show a clear "processing — do not resubmit" message.
+         */
+        const isTimeout = error instanceof DOMException && error.name === 'AbortError';
+        setResponse({
+          success: true,
+          status: 202,
+          data: { TRANSACTION: { SUCCESS: true } },
+          message: isTimeout
+            ? 'Your enrollment is taking longer than usual and is still being processed. Please do NOT resubmit — our team will confirm your enrollment shortly.'
+            : 'Your enrollment is being processed. Please do NOT resubmit — if you do not receive a confirmation, our team will follow up shortly.',
+        });
         clearFormDataOnly();
+        setLoading(false);
+        return;
       }
-
-      setLoading(false);
     } finally {
       sessionStorage.removeItem('form_submitting');
     }
