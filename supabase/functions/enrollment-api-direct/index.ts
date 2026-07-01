@@ -858,6 +858,12 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // List Bill enrollments are invoiced to the group, so the member is never
+    // charged an enrollment fee regardless of promo code.
+    if (isListBill) {
+      enrollmentFeeAmount = "0.00";
+    }
+
     const isPrimarySmoker = requestData.smoker.toLowerCase() === 'yes';
     const hasSmokerDependent = requestData.dependents.some(dep => dep.smoker.toLowerCase() === 'yes');
     const tobaccoFeeAmount = (isPrimarySmoker || hasSmokerDependent) ? "50.00" : "0.00";
