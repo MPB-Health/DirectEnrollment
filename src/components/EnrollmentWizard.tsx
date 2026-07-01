@@ -30,7 +30,7 @@ import ProgressIndicator from './ProgressIndicator';
 import Step1PersonalInfo from './Step1PersonalInfo';
 import Step2Questionnaire from './Step2Questionnaire';
 import Step2AddressInfo from './Step2AddressInfo';
-import ThankYouPage from './ThankYouPage';
+import ThankYouPage, { type ListBillSummary } from './ThankYouPage';
 
 interface ApiResponse {
   success: boolean;
@@ -63,6 +63,7 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
   const [finishingEnrollment, setFinishingEnrollment] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [memberId, setMemberId] = useState<string | null>(null);
+  const [listBillSummary, setListBillSummary] = useState<ListBillSummary | null>(null);
   const [invalidDependentIndices, setInvalidDependentIndices] = useState<number[]>([]);
 
   const [instanceId] = useState(() => crypto.randomUUID());
@@ -948,6 +949,10 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
           if (statusResult?.memberId) {
             setMemberId(statusResult.memberId);
             clearSubmissionId();
+            // Snapshot the List Bill decision BEFORE clearStorage() resets formData.
+            setListBillSummary(
+              formData.payment.paymentMethod === 'list-bill' ? { productName: 'Direct' } : null,
+            );
             setShowThankYou(true);
             clearStorage();
             sendAdvisorNotification(agentParam).catch(() => {});
@@ -1024,6 +1029,10 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
           .find(v => v.length > 0) || null;
         setMemberId(enrolledMemberId);
         clearSubmissionId();
+        // Snapshot the List Bill decision BEFORE clearStorage() resets formData.
+        setListBillSummary(
+          formData.payment.paymentMethod === 'list-bill' ? { productName: 'Direct' } : null,
+        );
         setShowThankYou(true);
         clearStorage();
         sendAdvisorNotification(agentParam).catch(() => {});
@@ -1140,7 +1149,7 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
   };
 
   if (showThankYou) {
-    return <ThankYouPage enrollmentData={{ firstName: formData.firstName, email: formData.email }} pdfUrl={pdfUrl} />;
+    return <ThankYouPage enrollmentData={{ firstName: formData.firstName, email: formData.email }} pdfUrl={pdfUrl} listBill={listBillSummary} />;
   }
 
   return (

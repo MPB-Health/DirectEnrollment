@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import EnrollmentWizard from './components/EnrollmentWizard';
 import PasswordEncryptionTool from './components/PasswordEncryptionTool';
+import ThankYouPage from './components/ThankYouPage';
 import ZionPrivacyPolicyFooterLink from './components/ZionPrivacyPolicyFooterLink';
 
 function App() {
@@ -76,6 +77,15 @@ function App() {
 
   if (currentPath === '/encrypt') {
     return <PasswordEncryptionTool />;
+  }
+
+  if (import.meta.env.DEV && currentPath === '/preview-listbill-thankyou') {
+    return (
+      <ThankYouPage
+        enrollmentData={{ firstName: 'Jane', email: 'jane.doe@example.com' }}
+        listBill={{ productName: 'Direct' }}
+      />
+    );
   }
 
   return (
