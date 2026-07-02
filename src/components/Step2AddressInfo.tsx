@@ -60,8 +60,11 @@ export default function Step2AddressInfo({
   const effectiveDateOptions = calculateEffectiveDates();
 
   const pricingSummary = useMemo(() => {
-    const ONE_TIME_ENROLLMENT_FEE = 100;
     const SMOKER_FEE = 50;
+    // List Bill enrollments are invoiced to the group, so the member pays no
+    // upfront enrollment fee.
+    const isListBill = formData.payment.paymentMethod === 'list-bill';
+    const ONE_TIME_ENROLLMENT_FEE = isListBill ? 0 : 100;
     const totalEnrollmentFee = formData.products.reduce((sum, p) => sum + (p.enrollmentFee || 0), 0);
     const totalAnnualFee = formData.products.reduce((sum, p) => sum + (p.annualFee || 0), 0);
 
@@ -75,8 +78,10 @@ export default function Step2AddressInfo({
     const recurringMonthly = baseRecurringMonthly + smokerFee;
 
     const initialPaymentBeforeDiscount = totalEnrollmentFee + totalAnnualFee + ONE_TIME_ENROLLMENT_FEE;
-    const initialPayment = applyPromoDiscount(initialPaymentBeforeDiscount, formData.appliedPromo);
-    const hasDiscount = formData.appliedPromo !== null;
+    const initialPayment = isListBill
+      ? initialPaymentBeforeDiscount
+      : applyPromoDiscount(initialPaymentBeforeDiscount, formData.appliedPromo);
+    const hasDiscount = !isListBill && formData.appliedPromo !== null;
 
     return {
       annualMembershipFee: totalAnnualFee,
@@ -88,7 +93,7 @@ export default function Step2AddressInfo({
       hasSmokerFee,
       smokerFee,
     };
-  }, [formData.products, formData.appliedPromo, formData.smoker, formData.dependents]);
+  }, [formData.products, formData.appliedPromo, formData.smoker, formData.dependents, formData.payment.paymentMethod]);
 
   const primaryPhoneDuplicateMsg = useMemo(() => {
     if (formData.dependents.length === 0) return null;
