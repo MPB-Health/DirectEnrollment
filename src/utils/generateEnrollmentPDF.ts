@@ -227,7 +227,7 @@ export async function generateEnrollmentPDF(formData: FormData): Promise<Blob> {
       : '$100.00 one-time';
 
   const enrollmentFeesInfo = [
-    ['Annual Membership Fee:', '$25.00 per Year'],
+    ['Annual Membership Fee:', isListBill ? '$0.00 per Year' : '$25.00 per Year'],
     ['Enrollment Fee:', enrollmentFeeText],
   ];
 

@@ -20,6 +20,7 @@ interface EnrollmentSummaryProps {
   appliedPromo: AppliedPromo | null;
   onPromoCodeChange: (code: string) => void;
   onAppliedPromoChange: (promo: AppliedPromo | null) => void;
+  listBill?: boolean;
 }
 
 const planOptions: Record<string, { value: string; label: string; memberOnlyPrice?: number; plusOnePrice?: number; childrenPrice?: number }[]> = {
@@ -44,6 +45,7 @@ export default function EnrollmentSummary({
   appliedPromo,
   onPromoCodeChange,
   onAppliedPromoChange,
+  listBill = false,
 }: EnrollmentSummaryProps) {
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
   const [promoError, setPromoError] = useState<string>('');
@@ -115,16 +117,19 @@ export default function EnrollmentSummary({
     return product.recurringFee;
   };
 
-  const totalEnrollmentFee = products.reduce((sum, product) => sum + product.enrollmentFee, 0);
+  const totalEnrollmentFee = listBill ? 0 : products.reduce((sum, product) => sum + product.enrollmentFee, 0);
   const totalRecurringFee = products.reduce((sum, product) => sum + calculateRecurringFee(product), 0);
-  const totalAnnualFee = products.reduce((sum, product) => sum + (product.annualFee || 0), 0);
+  // List Bill enrollments are invoiced to the group: no annual membership or
+  // one-time enrollment fee is charged to the member.
+  const totalAnnualFee = listBill ? 0 : products.reduce((sum, product) => sum + (product.annualFee || 0), 0);
+  const oneTimeEnrollmentFee = listBill ? 0 : 100;
 
   const isSubscriberSmoker = smoker === 'Yes';
   const hasDependentSmoker = dependents.some(dep => dep.smoker === 'Yes');
   const tobaccoFee = (isSubscriberSmoker || hasDependentSmoker) ? 50.00 : 0;
 
-  const baseInitialPayment = totalEnrollmentFee + totalAnnualFee + 100;
-  const finalInitialPayment = applyPromoDiscount(baseInitialPayment, appliedPromo);
+  const baseInitialPayment = totalEnrollmentFee + totalAnnualFee + oneTimeEnrollmentFee;
+  const finalInitialPayment = listBill ? baseInitialPayment : applyPromoDiscount(baseInitialPayment, appliedPromo);
   const promoDiscount = baseInitialPayment - finalInitialPayment;
 
   return (
@@ -238,8 +243,8 @@ export default function EnrollmentSummary({
 
                     {product.id === 'care-plus' && product.annualFee && product.annualFee > 0 && (
                       <div className="space-y-1">
-                        <p className="text-sm text-gray-700">${product.annualFee.toFixed(2)} per Year Annual Membership Fee</p>
-                        <p className="text-sm text-gray-700">$100.00 one-time enrollment</p>
+                        <p className="text-sm text-gray-700">${(listBill ? 0 : product.annualFee).toFixed(2)} per Year Annual Membership Fee</p>
+                        <p className="text-sm text-gray-700">${oneTimeEnrollmentFee.toFixed(2)} one-time enrollment</p>
                       </div>
                     )}
 
@@ -337,7 +342,7 @@ export default function EnrollmentSummary({
               )}
             </div>
 
-            {totalAnnualFee > 0 && (
+            {(totalAnnualFee > 0 || listBill) && (
               <>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700">Annual Membership Fee:</span>
@@ -345,7 +350,7 @@ export default function EnrollmentSummary({
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700">One-Time Enrollment:</span>
-                  <span className="font-medium text-gray-800">$100.00</span>
+                  <span className="font-medium text-gray-800">${oneTimeEnrollmentFee.toFixed(2)}</span>
                 </div>
               </>
             )}

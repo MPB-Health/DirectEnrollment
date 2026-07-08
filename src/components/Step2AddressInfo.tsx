@@ -65,8 +65,8 @@ export default function Step2AddressInfo({
     // upfront enrollment fee.
     const isListBill = formData.payment.paymentMethod === 'list-bill';
     const ONE_TIME_ENROLLMENT_FEE = isListBill ? 0 : 100;
-    const totalEnrollmentFee = formData.products.reduce((sum, p) => sum + (p.enrollmentFee || 0), 0);
-    const totalAnnualFee = formData.products.reduce((sum, p) => sum + (p.annualFee || 0), 0);
+    const totalEnrollmentFee = isListBill ? 0 : formData.products.reduce((sum, p) => sum + (p.enrollmentFee || 0), 0);
+    const totalAnnualFee = isListBill ? 0 : formData.products.reduce((sum, p) => sum + (p.annualFee || 0), 0);
 
     const directEnrollmentProduct = formData.products.find(p => p.id === 'care-plus');
     const baseRecurringMonthly = directEnrollmentProduct?.extractedPrice || 0;
