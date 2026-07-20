@@ -40,9 +40,7 @@ export interface DirectEnrollmentPlanPrice {
 
 export const DIRECT_ENROLLMENT_PLAN_PRICES: DirectEnrollmentPlanPrice[] = [
   // Member Only
-  { productId: '3281', price: 295.0, iuaLevel: '1000', ageRange: '18-29', coverageType: 'Member Only' },
-  { productId: '3281', price: 300.0, iuaLevel: '1000', ageRange: '30-49', coverageType: 'Member Only' },
-  { productId: '3281', price: 386.0, iuaLevel: '1000', ageRange: '50-64', coverageType: 'Member Only' },
+
   { productId: '10334', price: 295.0, iuaLevel: '1250', ageRange: '18-29', coverageType: 'Member Only' },
   { productId: '10334', price: 321.0, iuaLevel: '1250', ageRange: '30-49', coverageType: 'Member Only' },
   { productId: '10334', price: 415.0, iuaLevel: '1250', ageRange: '50-64', coverageType: 'Member Only' },
@@ -53,9 +51,7 @@ export const DIRECT_ENROLLMENT_PLAN_PRICES: DirectEnrollmentPlanPrice[] = [
   { productId: '3278', price: 250.0, iuaLevel: '5000', ageRange: '30-49', coverageType: 'Member Only' },
   { productId: '3278', price: 282.0, iuaLevel: '5000', ageRange: '50-64', coverageType: 'Member Only' },
   // Member + Spouse
-  { productId: '3283', price: 486.0, iuaLevel: '1000', ageRange: '18-29', coverageType: 'Member + Spouse' },
-  { productId: '3283', price: 540.0, iuaLevel: '1000', ageRange: '30-49', coverageType: 'Member + Spouse' },
-  { productId: '3283', price: 685.0, iuaLevel: '1000', ageRange: '50-64', coverageType: 'Member + Spouse' },
+ 
   { productId: '10335', price: 504.0, iuaLevel: '1250', ageRange: '18-29', coverageType: 'Member + Spouse' },
   { productId: '10335', price: 540.0, iuaLevel: '1250', ageRange: '30-49', coverageType: 'Member + Spouse' },
   { productId: '10335', price: 698.0, iuaLevel: '1250', ageRange: '50-64', coverageType: 'Member + Spouse' },
@@ -66,9 +62,7 @@ export const DIRECT_ENROLLMENT_PLAN_PRICES: DirectEnrollmentPlanPrice[] = [
   { productId: '3286', price: 415.0, iuaLevel: '5000', ageRange: '30-49', coverageType: 'Member + Spouse' },
   { productId: '3286', price: 480.0, iuaLevel: '5000', ageRange: '50-64', coverageType: 'Member + Spouse' },
   // Member + Children
-  { productId: '3288', price: 486.0, iuaLevel: '1000', ageRange: '18-29', coverageType: 'Member + Children' },
-  { productId: '3288', price: 540.0, iuaLevel: '1000', ageRange: '30-49', coverageType: 'Member + Children' },
-  { productId: '3288', price: 685.0, iuaLevel: '1000', ageRange: '50-64', coverageType: 'Member + Children' },
+
   { productId: '10336', price: 504.0, iuaLevel: '1250', ageRange: '18-29', coverageType: 'Member + Children' },
   { productId: '10336', price: 540.0, iuaLevel: '1250', ageRange: '30-49', coverageType: 'Member + Children' },
   { productId: '10336', price: 698.0, iuaLevel: '1250', ageRange: '50-64', coverageType: 'Member + Children' },
@@ -79,9 +73,7 @@ export const DIRECT_ENROLLMENT_PLAN_PRICES: DirectEnrollmentPlanPrice[] = [
   { productId: '3291', price: 415.0, iuaLevel: '5000', ageRange: '30-49', coverageType: 'Member + Children' },
   { productId: '3291', price: 480.0, iuaLevel: '5000', ageRange: '50-64', coverageType: 'Member + Children' },
   // Member + Family
-  { productId: '3293', price: 722.0, iuaLevel: '1000', ageRange: '18-29', coverageType: 'Member + Family' },
-  { productId: '3293', price: 755.0, iuaLevel: '1000', ageRange: '30-49', coverageType: 'Member + Family' },
-  { productId: '3293', price: 1005.0, iuaLevel: '1000', ageRange: '50-64', coverageType: 'Member + Family' },
+ 
   { productId: '10337', price: 762.0, iuaLevel: '1250', ageRange: '18-29', coverageType: 'Member + Family' },
   { productId: '10337', price: 773.0, iuaLevel: '1250', ageRange: '30-49', coverageType: 'Member + Family' },
   { productId: '10337', price: 1008.0, iuaLevel: '1250', ageRange: '50-64', coverageType: 'Member + Family' },

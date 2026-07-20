@@ -509,6 +509,27 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
+      // A selection persisted in sessionStorage may reference a plan that has
+      // since been removed from the pricing table. Reject it and force a re-pick.
+      const isCurrentOption = directEnrollmentPricing.options.some(
+        opt => opt.displayText === directEnrollmentProduct.selectedPlan
+          && opt.productId === directEnrollmentProduct.extractedBenefitId
+      );
+      if (!isCurrentOption) {
+        saveFormData({
+          ...formData,
+          products: formData.products.map(product =>
+            product.id === 'care-plus'
+              ? { ...product, selectedPlan: '', extractedBenefitId: undefined, extractedPrice: undefined }
+              : product
+          ),
+        });
+        setErrors({
+          essentialPlan: 'Your previously selected plan is no longer available. Please select an IUA level again.',
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
     }
 
     saveStep(2);
