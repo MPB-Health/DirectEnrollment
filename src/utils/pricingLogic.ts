@@ -76,7 +76,7 @@ export const DIRECT_ENROLLMENT_PLAN_PRICES: DirectEnrollmentPlanPrice[] = [
  
   { productId: '10337', price: 762.0, iuaLevel: '1250', ageRange: '18-29', coverageType: 'Member + Family' },
   { productId: '10337', price: 773.0, iuaLevel: '1250', ageRange: '30-49', coverageType: 'Member + Family' },
-  { productId: '10337', price: 1008.0, iuaLevel: '1250', ageRange: '50-64', coverageType: 'Member + Family' },
+  { productId: '10337', price: 1006.0, iuaLevel: '1250', ageRange: '50-64', coverageType: 'Member + Family' },
   { productId: '3295', price: 623.0, iuaLevel: '2500', ageRange: '18-29', coverageType: 'Member + Family' },
   { productId: '3295', price: 700.0, iuaLevel: '2500', ageRange: '30-49', coverageType: 'Member + Family' },
   { productId: '3295', price: 855.0, iuaLevel: '2500', ageRange: '50-64', coverageType: 'Member + Family' },
