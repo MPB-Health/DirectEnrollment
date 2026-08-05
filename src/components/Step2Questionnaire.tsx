@@ -650,12 +650,12 @@ export default function Step2Questionnaire({
 
           <div>
             <p className="font-semibold text-gray-900 mb-3">
-              Medical Cost Sharing Authorization
+            Medical Cost Sharing/Health Share Authorization
               <span className="text-red-500 ml-1">*</span>
             </p>
             <div className="bg-gray-50 border border-gray-300 rounded-lg p-4 mb-4">
               <p className="text-sm text-gray-700 leading-relaxed">
-                Medical Cost Sharing is not insurance or an insurance policy nor is it offered through an insurance company. Medical Cost Sharing is not a discount healthcare program nor a discount health card program. Whether anyone chooses to assist you with your medical bills will be totally voluntary, as neither the organization nor any other member is liable for or may be compelled to make the payment of your medical bill. As such, medical cost sharing should never be considered to be insurance. Whether you receive any amounts for medical expenses and whether or not medical cost sharing continues to operate, you are always personally responsible for the payment of your own medical bills. Medical Cost Sharing is not subject to the regulatory requirements or consumer protections of your particular State's Insurance Code or Statutes.
+              Medical Cost Sharing/Health Share is not insurance or an insurance policy nor is it offered through an insurance company. Medical Cost Sharing/Health Share is not a discount healthcare program nor a discount health card program. Whether anyone chooses to assist you with your medical bills will be totally voluntary, as neither the organization nor any other member is liable for or may be compelled to make the payment of your medical bill. As such, medical cost Sharing/health share should never be considered to be insurance. Whether you receive any amounts for medical expenses and whether or not medical cost sharing/health share continues to operate, you are always personally responsible for the payment of your own medical bills. Medical Cost Sharing/Health Share is not subject to the regulatory requirements or consumer protections of your particular State's Insurance Code or Statutes.
               </p>
             </div>
 
