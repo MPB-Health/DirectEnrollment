@@ -570,7 +570,6 @@ export default function Step2Questionnaire({
           <div>
             <p className="font-semibold text-gray-900 mb-2">
               Primary Member Medical Conditions
-              <span className="text-red-500 ml-1">*</span>
             </p>
             <p className="text-sm text-gray-700 mb-2">
               Has the primary member experienced symptoms of, been diagnosed with, or been treated for any condition within the past 24 months?
@@ -579,7 +578,7 @@ export default function Step2Questionnaire({
               *Note: A $25.00 annual fee is charged at the time of enrollment and each year thereafter. This fee covers your membership in the MPowering Benefits Association.
             </p>
             <p className="text-sm mb-2" style={{ color: '#9b0000' }}>
-             Add the conditions below. For multiple conditions, separate each one on a new line. (If no conditions exist, enter NA)
+             Add conditions below. For multiple conditions, please add one per line. (If there are no conditions present, you may leave this blank)
             </p>
 
             <textarea
@@ -591,7 +590,7 @@ export default function Step2Questionnaire({
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
                 errors.zionmh3 ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder="Enter medical conditions or NA"
+              placeholder="Enter medical conditions or leave blank if not applicable"
             />
             {errors.zionmh3 && <p className="mt-2 text-sm text-red-500">{errors.zionmh3}</p>}
           </div>

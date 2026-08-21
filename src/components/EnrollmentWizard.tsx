@@ -550,7 +550,6 @@ export default function EnrollmentWizard({ benefitId, onBenefitIdChange, agentId
     if (!answers.zionmh1) newErrors.zionmh1 = 'This field is required';
     if (!answers.zionmh2P) newErrors.zionmh2P = 'This field is required';
     if (!answers.zionmh2) newErrors.zionmh2 = 'This field is required';
-    if (!answers.zionmh3.trim()) newErrors.zionmh3 = 'This field is required';
     if (!answers.medicalCostSharingAuth) newErrors.medicalCostSharingAuth = 'You must acknowledge and agree to the authorization';
     if (!answers.termsAndConditionsAccept) {
       newErrors.termsAndConditionsAccept = 'You must read and accept the Terms and Conditions';
