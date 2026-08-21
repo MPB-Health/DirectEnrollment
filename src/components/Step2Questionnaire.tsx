@@ -450,7 +450,16 @@ export default function Step2Questionnaire({
               I understand that medical needs that result from a condition that existed prior to membership are only shareable if the condition was regarded as cured and did not require treatment or present symptoms for 24 months prior to the membership start date. This applies even if the member was only examined, diagnosed, or took medication for the condition within that 24-month window.
             </p>
             <p className="text-sm mb-3" style={{ color: '#9b0000' }}>
-              Examples of pre-existing conditions include but are not limited to: arthritis, cancer, degenerative conditions, diabetes, and heart conditions. High blood pressure, high cholesterol, and diabetes (types 1 and 2) are exceptions if they have not required hospitalization in the last 12 months and are controlled via diet or medication. For detailed information, refer to the Member Guidelines.
+              Examples of pre-existing conditions include but are not limited to: arthritis, cancer, degenerative conditions, diabetes, and heart conditions. High blood pressure, high cholesterol, and diabetes (types 1 and 2) are exceptions if they have not required hospitalization in the last 12 months and are controlled via diet or medication. For detailed information, refer to the{' '}
+              <a
+                href="/assets/Member-Guidelines_01.2026.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline font-semibold hover:opacity-80"
+                style={{ color: '#9b0000' }}
+              >
+                Member Guidelines
+              </a>.
             </p>
 
             <div className="flex flex-col gap-2">
