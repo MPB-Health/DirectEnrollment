@@ -455,7 +455,7 @@ export default function Step2Questionnaire({
                 href="/assets/Member-Guidelines_01.2026.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline font-semibold hover:opacity-80"
+                className="underline hover:opacity-80"
                 style={{ color: '#9b0000' }}
               >
                 Member Guidelines
