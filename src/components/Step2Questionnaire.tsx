@@ -16,6 +16,7 @@ interface QuestionnaireAnswers {
   zionmh3: string;
   primaryMedicalTreatments: string;
   spouseMedicalConditions: string;
+  dependentMedicalConditions: string;
   medicalCostSharingAuth: boolean;
   termsAndConditionsAccept: boolean;
   signatureData: string;
@@ -624,13 +625,12 @@ export default function Step2Questionnaire({
             <div>
               <p className="font-semibold text-gray-900 mb-2">
                 Spouse's Medical Conditions
-                <span className="text-red-500 ml-1">*</span>
               </p>
               <p className="text-sm text-gray-700 mb-2">
                 Has the primary member's spouse experienced symptoms of, been diagnosed with, or been treated for any condition within the past 24 months?
               </p>
               <p className="text-sm mb-2" style={{ color: '#9b0000' }}>
-                Add conditions below. For multiple conditions, please add one per line. (If there are no conditions present, enter NA)
+                Add conditions below. For multiple conditions, please add one per line. (If there are no conditions present, you may leave this blank)
               </p>
 
               <textarea
@@ -642,9 +642,36 @@ export default function Step2Questionnaire({
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
                   errors.spouseMedicalConditions ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Enter spouse medical conditions or NA"
+                placeholder="Enter spouse medical conditions or leave blank if not applicable"
               />
               {errors.spouseMedicalConditions && <p className="mt-2 text-sm text-red-500">{errors.spouseMedicalConditions}</p>}
+            </div>
+          )}
+
+          {formData.dependents.some(dep => dep.relationship === 'Child') && (
+            <div>
+              <p className="font-semibold text-gray-900 mb-2">
+                Dependent(s) Medical Conditions
+              </p>
+              <p className="text-sm text-gray-700 mb-2">
+                Has the dependent(s) experienced symptoms of, been diagnosed with, or been treated for any condition within the past 24 months?
+              </p>
+              <p className="text-sm mb-2" style={{ color: '#9b0000' }}>
+                Add conditions below. For multiple conditions, please add one per line. (If there are no conditions present, you may leave this blank)
+              </p>
+
+              <textarea
+                name="dependentMedicalConditions"
+                value={answers.dependentMedicalConditions}
+                onChange={(e) => handleRadioChange('dependentMedicalConditions', e.target.value)}
+                rows={3}
+                maxLength={255}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                  errors.dependentMedicalConditions ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter dependent medical conditions or leave blank if not applicable"
+              />
+              {errors.dependentMedicalConditions && <p className="mt-2 text-sm text-red-500">{errors.dependentMedicalConditions}</p>}
             </div>
           )}
 

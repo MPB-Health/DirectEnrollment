@@ -65,6 +65,7 @@ export interface QuestionnaireAnswers {
   zionmh3: string;
   primaryMedicalTreatments: string;
   spouseMedicalConditions: string;
+  dependentMedicalConditions: string;
   medicalCostSharingAuth: boolean;
   termsAndConditionsAccept: boolean;
   signatureData: string;
@@ -165,6 +166,7 @@ const createDefaultFormData = (benefitId: string | null, agentId: string = ''): 
       zionmh3: '',
       primaryMedicalTreatments: '',
       spouseMedicalConditions: '',
+      dependentMedicalConditions: '',
       medicalCostSharingAuth: false,
       termsAndConditionsAccept: false,
       signatureData: '',
